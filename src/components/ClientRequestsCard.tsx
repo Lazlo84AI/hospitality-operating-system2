@@ -223,6 +223,7 @@ export function ClientRequestsCard() {
       <MembersModal isOpen={showMembersModal} onClose={() => setShowMembersModal(false)} />
       <EscalationModal isOpen={showEscalationModal} onClose={() => setShowEscalationModal(false)} />
       <ChecklistModal isOpen={showChecklistModal} onClose={() => setShowChecklistModal(false)} onAdd={handleAddChecklist} />
+      </div>
     </>
   );
 }
