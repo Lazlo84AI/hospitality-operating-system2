@@ -1,4 +1,5 @@
 import { AlertCircle, Clock, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { TaskDetailModal } from './TaskDetailModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,9 @@ const followUps = [
     priority: 'urgence',
     assignedTo: 'Réception : Leopold Bechu',
     hoursElapsed: 3,
-    overdue: false
+    overdue: false,
+    description: 'Confirmer l\'arrivée du client VIP prévu pour 15h aujourd\'hui.',
+    type: 'Relance'
   },
   {
     id: 2,
@@ -23,12 +26,52 @@ const followUps = [
     priority: null,
     assignedTo: 'Gouvernante : Marie Dubois',
     hoursElapsed: 24,
-    overdue: true
+    overdue: true,
+    description: 'Message WhatsApp du client de la suite 301 concernant une demande spéciale.',
+    type: 'Relance'
+  },
+  {
+    id: 3,
+    title: 'Équipement manquant en chambre',
+    location: 'Chambre 450',
+    statut: 'À traiter',
+    priority: 'urgence',
+    assignedTo: 'Prestataire : Jean Dupont',
+    hoursElapsed: 6,
+    overdue: false,
+    description: 'Vérifier et installer l\'équipement manquant signalé par le client.',
+    type: 'Relance'
+  },
+  {
+    id: 4,
+    title: 'Confirmation équipements massage',
+    location: 'Spa',
+    statut: 'En cours',
+    priority: null,
+    assignedTo: 'Gouvernante : Marie Dubois',
+    hoursElapsed: 12,
+    overdue: false,
+    description: 'Confirmer la disponibilité des équipements de massage pour la réservation de 16h.',
+    type: 'Relance'
+  },
+  {
+    id: 5,
+    title: 'Livraison arrangements floraux',
+    location: 'Lobby',
+    statut: 'À traiter',
+    priority: 'urgence',
+    assignedTo: 'Prestataire : Jean Dupont',
+    hoursElapsed: 48,
+    overdue: true,
+    description: 'Coordonner la livraison et l\'installation des arrangements floraux pour l\'événement.',
+    type: 'Relance'
   }
 ];
 
 export function FollowUpsCard() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedTask, setSelectedTask] = useState<(typeof followUps[0]) | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const itemsPerPage = 2;
   const maxIndex = Math.max(0, followUps.length - itemsPerPage);
 
@@ -56,6 +99,11 @@ export function FollowUpsCard() {
 
   const prevSlide = () => {
     setCurrentIndex(Math.max(currentIndex - 1, 0));
+  };
+
+  const handleTaskClick = (task: typeof followUps[0]) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
   return (
@@ -117,7 +165,10 @@ export function FollowUpsCard() {
               <h3 className="font-bold text-foreground text-base flex-1">
                 {item.title}
               </h3>
-              <Eye className="h-4 w-4 text-soft-pewter hover:text-palace-navy cursor-pointer" />
+              <Eye 
+                className="h-4 w-4 text-soft-pewter hover:text-palace-navy cursor-pointer" 
+                onClick={() => handleTaskClick(item)}
+              />
             </div>
 
             <div className="mb-3">
@@ -171,9 +222,25 @@ export function FollowUpsCard() {
               <div className="h-2 w-2 rounded-full bg-green-500" />
               <span className="text-xs">{followUps.filter(item => item.statut === 'À traiter').length} à traiter</span>
             </div>
+            <div className="flex items-center space-x-1">
+              <div className="h-2 w-2 rounded-full bg-palace-navy" />
+              <span className="text-xs">{followUps.filter(item => item.statut === 'En cours').length} en cours</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modal de détails */}
+      {selectedTask && (
+        <TaskDetailModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedTask(null);
+          }}
+          task={selectedTask}
+        />
+      )}
     </div>
   );
 }

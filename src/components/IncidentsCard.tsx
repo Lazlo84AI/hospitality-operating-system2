@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { AlertTriangle, Clock, User, Eye, MessageCircle, ChevronDown, ChevronUp, CheckSquare, Users, X, Plus, ChevronLeft, ChevronRight, TrendingUp, Mail, MessageSquare, MoveUp } from 'lucide-react';
 import { ChecklistComponent } from './ChecklistComponent';
+import { ReminderModal } from './modals/ReminderModal';
+import { MembersModal } from './modals/MembersModal';
+import { EscalationModal } from './modals/EscalationModal';
+import { ChecklistModal } from './modals/ChecklistModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -106,27 +110,27 @@ export function IncidentsCard() {
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [showActivityDetails, setShowActivityDetails] = useState(false);
   const [comment, setComment] = useState('');
+  const [checklists, setChecklists] = useState<any[]>([]);
   
-  // États pour les pop-ins
-  const [showChecklistDialog, setShowChecklistDialog] = useState(false);
-  const [showReminderDialog, setShowReminderDialog] = useState(false);
-  const [showMembersDialog, setShowMembersDialog] = useState(false);
-  const [showEscaladeDialog, setShowEscaladeDialog] = useState(false);
-  const [selectedEscaladeMember, setSelectedEscaladeMember] = useState('');
-  const [escaladeMethod, setEscaladeMethod] = useState('mail');
-  
-  // États pour les fonctionnalités
-  const [checklistTitle, setChecklistTitle] = useState('Checklist');
-  const [showChecklist, setShowChecklist] = useState(false);
-  const [checklistItem, setChecklistItem] = useState('');
-  
-  // États pour le reminder
-  const [reminderText, setReminderText] = useState('');
-  const [reminderDate, setReminderDate] = useState<Date | undefined>(new Date());
-  const [hasStartDate, setHasStartDate] = useState(false);
-  const [hasDeadline, setHasDeadline] = useState(true);
-  const [deadlineTime, setDeadlineTime] = useState('23:30');
-  const [reminderBefore, setReminderBefore] = useState('10 minutes avant');
+  // États pour les modales
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showEscalationModal, setShowEscalationModal] = useState(false);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+
+  const handleAddChecklist = (title: string) => {
+    const newChecklist = {
+      id: Date.now().toString(),
+      title,
+      items: []
+    };
+    setChecklists([...checklists, newChecklist]);
+    setShowChecklistModal(false);
+  };
+
+  const handleDeleteChecklist = (checklistId: string) => {
+    setChecklists(checklists.filter(checklist => checklist.id !== checklistId));
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -136,7 +140,6 @@ export function IncidentsCard() {
       default: return 'outline';
     }
   };
-
 
   const getPriorityColor = (priority: string) => {
     return priority === 'URGENCE' 
@@ -298,13 +301,13 @@ export function IncidentsCard() {
                 <p className="mt-2 text-soft-pewter">{selectedIncident.description}</p>
               </div>
 
-              {/* Barre d'outils Trello */}
+              {/* Barre d'outils */}
               <div className="flex space-x-3">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center space-x-2 px-3 py-2 border border-border rounded-md bg-background hover:bg-muted"
-                  onClick={() => setShowReminderDialog(true)}
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowReminderModal(true)}
                 >
                   <Clock className="h-4 w-4 text-palace-navy" />
                   <span className="text-sm text-palace-navy">Reminder</span>
@@ -312,8 +315,8 @@ export function IncidentsCard() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center space-x-2 px-3 py-2 border border-border rounded-md bg-background hover:bg-muted"
-                  onClick={() => setShowChecklistDialog(true)}
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowChecklistModal(true)}
                 >
                   <CheckSquare className="h-4 w-4 text-palace-navy" />
                   <span className="text-sm text-palace-navy">Checklist</span>
@@ -321,8 +324,8 @@ export function IncidentsCard() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center space-x-2 px-3 py-2 border border-border rounded-md bg-background hover:bg-muted"
-                  onClick={() => setShowMembersDialog(true)}
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowMembersModal(true)}
                 >
                   <Users className="h-4 w-4 text-palace-navy" />
                   <span className="text-sm text-palace-navy">Membres</span>
@@ -330,13 +333,22 @@ export function IncidentsCard() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center space-x-2 px-3 py-2 border border-border rounded-md bg-background hover:bg-muted"
-                  onClick={() => setShowEscaladeDialog(true)}
+                  className="flex items-center space-x-2"
+                  onClick={() => setShowEscalationModal(true)}
                 >
                   <MoveUp className="h-4 w-4 text-palace-navy" />
                   <span className="text-sm text-palace-navy">Escalade</span>
                 </Button>
               </div>
+
+              {/* Affichage des checklists */}
+              {checklists.map((checklist) => (
+                <ChecklistComponent
+                  key={checklist.id}
+                  title={checklist.title}
+                  onDelete={() => handleDeleteChecklist(checklist.id)}
+                />
+              ))}
 
               {/* Commentaires et activité */}
               <div className="border-t pt-6">
@@ -427,6 +439,25 @@ export function IncidentsCard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modales secondaires */}
+      <ReminderModal 
+        isOpen={showReminderModal} 
+        onClose={() => setShowReminderModal(false)} 
+      />
+      <MembersModal 
+        isOpen={showMembersModal} 
+        onClose={() => setShowMembersModal(false)} 
+      />
+      <EscalationModal 
+        isOpen={showEscalationModal} 
+        onClose={() => setShowEscalationModal(false)} 
+      />
+      <ChecklistModal 
+        isOpen={showChecklistModal} 
+        onClose={() => setShowChecklistModal(false)} 
+        onAdd={handleAddChecklist}
+      />
     </>
   );
 }

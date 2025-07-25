@@ -1,5 +1,12 @@
-import { Heart, Clock, Eye } from 'lucide-react';
+import { Heart, Clock, Eye, CheckCircle, Users, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ReminderModal } from './modals/ReminderModal';
+import { MembersModal } from './modals/MembersModal';
+import { EscalationModal } from './modals/EscalationModal';
+import { ChecklistModal } from './modals/ChecklistModal';
+import { ChecklistComponent } from './ChecklistComponent';
 import { useState } from 'react';
 
 const clientRequests = [
@@ -27,6 +34,29 @@ const clientRequests = [
 ];
 
 export function ClientRequestsCard() {
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [checklists, setChecklists] = useState<any[]>([]);
+  
+  // États pour les modales
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showEscalationModal, setShowEscalationModal] = useState(false);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+
+  const handleAddChecklist = (title: string) => {
+    const newChecklist = {
+      id: Date.now().toString(),
+      title,
+      items: []
+    };
+    setChecklists([...checklists, newChecklist]);
+  };
+
+  const handleDeleteChecklist = (checklistId: string) => {
+    setChecklists(checklists.filter(checklist => checklist.id !== checklistId));
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'À traiter': return 'bg-green-500 text-white';
@@ -42,7 +72,8 @@ export function ClientRequestsCard() {
   };
 
   return (
-    <div className="luxury-card p-6">
+    <>
+      <div className="luxury-card p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-green-50 rounded-lg">
@@ -74,7 +105,13 @@ export function ClientRequestsCard() {
                   <h3 className="font-bold text-palace-navy">
                     {request.request}
                   </h3>
-                  <Eye className="h-4 w-4 text-soft-pewter cursor-pointer hover:text-palace-navy" />
+                  <Eye 
+                    className="h-4 w-4 text-soft-pewter cursor-pointer hover:text-palace-navy" 
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setIsDetailModalOpen(true);
+                    }}
+                  />
                 </div>
                 <p className="text-palace-navy mb-1">
                   {request.room}
@@ -127,6 +164,65 @@ export function ClientRequestsCard() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal de détail complet */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl luxury-card">
+          <DialogHeader>
+            <DialogTitle className="font-playfair text-xl text-palace-navy">
+              Demande Client - Détails
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold text-lg text-palace-navy mb-3">
+                  {selectedRequest.request}
+                </h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge className={getStatusColor(selectedRequest.status)}>
+                    {selectedRequest.status}
+                  </Badge>
+                  {selectedRequest.priority === 'URGENCE' && (
+                    <Badge className="bg-urgence-red text-white">URGENCE</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Barre d'outils */}
+              <div className="flex space-x-3">
+                <Button variant="outline" size="sm" onClick={() => setShowReminderModal(true)}>
+                  <Clock className="h-4 w-4 mr-2" />Reminder
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowChecklistModal(true)}>
+                  <CheckCircle className="h-4 w-4 mr-2" />Checklist
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowMembersModal(true)}>
+                  <Users className="h-4 w-4 mr-2" />Membres
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowEscalationModal(true)}>
+                  <TrendingUp className="h-4 w-4 mr-2" />Escalade
+                </Button>
+              </div>
+
+              {/* Affichage des checklists */}
+              {checklists.map((checklist) => (
+                <ChecklistComponent
+                  key={checklist.id}
+                  title={checklist.title}
+                  onDelete={() => handleDeleteChecklist(checklist.id)}
+                />
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modales secondaires */}
+      <ReminderModal isOpen={showReminderModal} onClose={() => setShowReminderModal(false)} />
+      <MembersModal isOpen={showMembersModal} onClose={() => setShowMembersModal(false)} />
+      <EscalationModal isOpen={showEscalationModal} onClose={() => setShowEscalationModal(false)} />
+      <ChecklistModal isOpen={showChecklistModal} onClose={() => setShowChecklistModal(false)} onAdd={handleAddChecklist} />
+    </>
   );
 }
